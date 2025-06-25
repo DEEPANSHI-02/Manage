@@ -18,7 +18,7 @@ const useAuthStore = create(
       permissions: [],
       
       /**
-       * Login function with role detection
+       * Login function with role detection based on demo credentials
        */
       login: async (credentials) => {
         try {
@@ -33,20 +33,45 @@ const useAuthStore = create(
             const userDetailsResponse = await mockApi.getCurrentUser();
             const userDetails = userDetailsResponse.data;
             
-            // Determine user role based on email and roles
+            // Determine user role based on email (matching demo credentials)
             let userRole = 'user'; // default
             let permissions = [];
             
-            if (email === 'admin@techcorp.com') {
+            // Role detection based on demo credentials from LoginPage
+            console.log('=== LOGIN ROLE DETECTION ===');
+            console.log('Email received:', email);
+            console.log('Email type:', typeof email);
+            console.log('Email length:', email?.length);
+            
+            // Clean email to handle any whitespace issues
+            const cleanEmail = email?.trim()?.toLowerCase();
+            console.log('Clean email:', cleanEmail);
+            
+            if (cleanEmail === 'admin@techcorp.com') {
               userRole = 'system_admin';
               permissions = ['all']; // System admin has all permissions
-            } else if (email === 'sarah.manager@techcorp.com') {
+              console.log('✅ Assigned role: system_admin');
+              toast.success('Welcome System Administrator!');
+            } else if (cleanEmail === 'sarah.manager@techcorp.com') {
               userRole = 'tenant_admin';
               permissions = ['tenant.manage', 'user.manage', 'organization.manage', 'role.manage'];
-            } else {
+              console.log('✅ Assigned role: tenant_admin');
+              toast.success('Welcome Tenant Administrator!');
+            } else if (cleanEmail === 'mike.developer@techcorp.com') {
               userRole = 'user';
               permissions = ['user.read', 'profile.update'];
+              console.log('✅ Assigned role: user');
+              toast.success('Welcome User!');
+            } else {
+              // Default role for any other users
+              userRole = 'user';
+              permissions = ['user.read', 'profile.update'];
+              console.log('⚠️ Assigned role: user (default) for email:', cleanEmail);
+              toast.success(`Welcome ${name}!`);
             }
+            
+            console.log('Final userRole:', userRole);
+            console.log('Final permissions:', permissions);
             
             const user = {
               id: user_id,
@@ -67,7 +92,6 @@ const useAuthStore = create(
               permissions
             });
             
-            toast.success(`Welcome ${userRole.replace('_', ' ')}!`);
             return { success: true };
           } else {
             throw new Error(response.message || 'Login failed');
@@ -137,6 +161,23 @@ const useAuthStore = create(
       },
       
       /**
+       * Get user role display name
+       */
+      getRoleDisplayName: () => {
+        const { userRole } = get();
+        switch (userRole) {
+          case 'system_admin':
+            return 'System Administrator';
+          case 'tenant_admin':
+            return 'Tenant Administrator';
+          case 'user':
+            return 'User';
+          default:
+            return 'User';
+        }
+      },
+      
+      /**
        * Update user profile
        */
       updateProfile: async (profileData) => {
@@ -185,16 +226,28 @@ const useAuthStore = create(
             let userRole = 'user';
             let permissions = [];
             
-            if (user.email === 'admin@techcorp.com') {
+            console.log('=== INIT AUTH ROLE DETECTION ===');
+            console.log('User email from response:', user.email);
+            
+            // Clean email to handle any whitespace issues
+            const cleanEmail = user.email?.trim()?.toLowerCase();
+            console.log('Clean email:', cleanEmail);
+            
+            if (cleanEmail === 'admin@techcorp.com') {
               userRole = 'system_admin';
               permissions = ['all'];
-            } else if (user.email === 'sarah.manager@techcorp.com') {
+              console.log('✅ InitAuth - Assigned role: system_admin');
+            } else if (cleanEmail === 'sarah.manager@techcorp.com') {
               userRole = 'tenant_admin';
               permissions = ['tenant.manage', 'user.manage', 'organization.manage', 'role.manage'];
+              console.log('✅ InitAuth - Assigned role: tenant_admin');
             } else {
               userRole = 'user';
               permissions = ['user.read', 'profile.update'];
+              console.log('✅ InitAuth - Assigned role: user');
             }
+            
+            console.log('InitAuth Final userRole:', userRole);
             
             set({
               user: response.data,
