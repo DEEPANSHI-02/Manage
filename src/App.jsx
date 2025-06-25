@@ -10,10 +10,8 @@ import OrganizationManagement from './pages/OrganizationManagement';
 // Import all three dashboards directly
 import SystemAdminDashboard from './pages/dashboards/SystemAdminDashboards';
 import TenantAdminDashboard from './pages/dashboards/TenantAdminDashboard';
-import UserDashboard from './pages/Dashboard';
-
-// Remove debug dashboard import
-// import DebugDashboard from './components/DebugDashboard';
+import UserPortal from './pages/UserPortal'; // NEW: Complete User Portal
+import Dashboard from './pages/Dashboard'; // Keep original as fallback
 
 import { 
   UserManagement,
@@ -62,8 +60,8 @@ const RoleBasedDashboard = () => {
     console.log('Rendering TenantAdminDashboard');
     return <TenantAdminDashboard />;
   } else {
-    console.log('Rendering UserDashboard (default)');
-    return <UserDashboard />;
+    console.log('Rendering UserPortal (NEW Complete User Portal)');
+    return <UserPortal />; // NEW: Use complete UserPortal instead of basic Dashboard
   }
 };
 
@@ -164,8 +162,28 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     
-                    {/* Role-based dashboard routing - FIXED */}
+                    {/* Role-based dashboard routing - UPDATED */}
                     <Route path="/dashboard" element={<RoleBasedDashboard />} />
+                    
+                    {/* NEW: Direct UserPortal route for testing/development */}
+                    <Route 
+                      path="/user-portal" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    {/* Fallback: Original basic dashboard */}
+                    <Route 
+                      path="/basic-dashboard" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <Dashboard />
+                        </RoleProtectedRoute>
+                      } 
+                    />
                     
                     {/* Tenant Management - Only for System Admins */}
                     <Route 
@@ -227,7 +245,7 @@ function App() {
                       } 
                     />
                     
-                    {/* Profile - All authenticated users */}
+                    {/* Profile - All authenticated users (NEW: Can be part of UserPortal) */}
                     <Route path="/profile" element={<Profile />} />
                     
                     {/* Settings - System Admin and Tenant Admin */}
@@ -236,6 +254,52 @@ function App() {
                       element={
                         <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
                           <SettingsPage />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+
+                    {/* NEW: User-specific routes that integrate with UserPortal */}
+                    <Route 
+                      path="/my-organization" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/my-profile" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/my-activity" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/my-security" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/my-preferences" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
                         </RoleProtectedRoute>
                       } 
                     />
