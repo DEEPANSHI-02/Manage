@@ -6,9 +6,9 @@ import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import TenantManagement from './pages/TenantManagement';
+import UserManagement from './pages/UserManagement'; 
+import OrganizationManagement from './pages/OrganizationManagement';
 import { 
-  OrganizationManagement,
-  UserManagement,
   RoleManagement,
   PrivilegeManagement,
   LegalEntityManagement,
