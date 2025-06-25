@@ -5,16 +5,17 @@ import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import TenantManagement from './pages/TenantManagement';
+import OrganizationManagement from './pages/OrganizationManagement';
 
 // Import all three dashboards directly
 import SystemAdminDashboard from './pages/dashboards/SystemAdminDashboards';
 import TenantAdminDashboard from './pages/dashboards/TenantAdminDashboard';
 import UserDashboard from './pages/Dashboard';
 
-import DebugDashboard from './components/DebugDashboard';
+// Remove debug dashboard import
+// import DebugDashboard from './components/DebugDashboard';
 
 import { 
-  OrganizationManagement,
   UserManagement,
   RoleManagement,
   PrivilegeManagement,
@@ -30,7 +31,7 @@ import './App.css';
  * Renders appropriate dashboard based on user role
  */
 const RoleBasedDashboard = () => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading, isSystemAdmin, isTenantAdmin, isRegularUser } = useAuth();
 
   // Debug logging
   console.log('=== DASHBOARD ROUTING DEBUG ===');
@@ -38,6 +39,9 @@ const RoleBasedDashboard = () => {
   console.log('User Role:', userRole);
   console.log('User Email:', user?.email);
   console.log('Loading:', loading);
+  console.log('isSystemAdmin():', isSystemAdmin());
+  console.log('isTenantAdmin():', isTenantAdmin());
+  console.log('isRegularUser():', isRegularUser());
 
   if (loading) {
     return <LoadingSpinner message="Loading dashboard..." />;
@@ -50,19 +54,16 @@ const RoleBasedDashboard = () => {
   // Route to appropriate dashboard based on user role
   console.log('Routing to dashboard for role:', userRole);
   
-  switch (userRole) {
-    case 'system_admin':
-      console.log('Rendering SystemAdminDashboard');
-      return <SystemAdminDashboard />;
-    
-    case 'tenant_admin':
-      console.log('Rendering TenantAdminDashboard');
-      return <TenantAdminDashboard />;
-    
-    case 'user':
-    default:
-      console.log('Rendering UserDashboard (default)');
-      return <UserDashboard />;
+  // Use function checks instead of string comparison for better reliability
+  if (isSystemAdmin()) {
+    console.log('Rendering SystemAdminDashboard');
+    return <SystemAdminDashboard />;
+  } else if (isTenantAdmin()) {
+    console.log('Rendering TenantAdminDashboard');
+    return <TenantAdminDashboard />;
+  } else {
+    console.log('Rendering UserDashboard (default)');
+    return <UserDashboard />;
   }
 };
 
@@ -95,6 +96,47 @@ const PublicRoute = ({ children }) => {
 };
 
 /**
+ * Role-Protected Route Component
+ * Restricts access based on user roles
+ */
+const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
+  const { userRole, isSystemAdmin, isTenantAdmin, isRegularUser } = useAuth();
+  
+  // System admin can access everything
+  if (isSystemAdmin()) {
+    return children;
+  }
+  
+  // Check if current user role is in allowed roles
+  const hasAccess = allowedRoles.includes(userRole) || 
+    (allowedRoles.includes('tenant_admin') && isTenantAdmin()) ||
+    (allowedRoles.includes('user') && isRegularUser());
+  
+  if (!hasAccess) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 text-red-400">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            You don't have permission to access this page.
+          </p>
+          <div className="mt-6">
+            <Navigate to="/dashboard" replace />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return children;
+};
+
+/**
  * Main Application Component
  * Handles routing and global layout
  */
@@ -121,19 +163,82 @@ function App() {
                 <DashboardLayout>
                   <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    {/* Role-based dashboard routing */}
-                    {/* <Route path="/dashboard" element={<RoleBasedDashboard />} /> */}
-                    <Route path="/dashboard" element={<DebugDashboard />} />
                     
-                    {/* Other routes */}
-                    <Route path="/tenants" element={<TenantManagement />} />
-                    <Route path="/organizations" element={<OrganizationManagement />} />
-                    <Route path="/users" element={<UserManagement />} />
-                    <Route path="/roles" element={<RoleManagement />} />
-                    <Route path="/privileges" element={<PrivilegeManagement />} />
-                    <Route path="/legal-entities" element={<LegalEntityManagement />} />
+                    {/* Role-based dashboard routing - FIXED */}
+                    <Route path="/dashboard" element={<RoleBasedDashboard />} />
+                    
+                    {/* Tenant Management - Only for System Admins */}
+                    <Route 
+                      path="/tenants" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin']}>
+                          <TenantManagement />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    {/* Organization Management - System Admin and Tenant Admin */}
+                    <Route 
+                      path="/organizations" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
+                          <OrganizationManagement />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    {/* User Management - System Admin and Tenant Admin */}
+                    <Route 
+                      path="/users" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
+                          <UserManagement />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    {/* Role Management - System Admin and Tenant Admin */}
+                    <Route 
+                      path="/roles" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
+                          <RoleManagement />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    {/* Privilege Management - System Admin and Tenant Admin */}
+                    <Route 
+                      path="/privileges" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
+                          <PrivilegeManagement />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    {/* Legal Entity Management - All authenticated users */}
+                    <Route 
+                      path="/legal-entities" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin', 'user']}>
+                          <LegalEntityManagement />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    {/* Profile - All authenticated users */}
                     <Route path="/profile" element={<Profile />} />
-                    <Route path="/settings" element={<SettingsPage />} />
+                    
+                    {/* Settings - System Admin and Tenant Admin */}
+                    <Route 
+                      path="/settings" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
+                          <SettingsPage />
+                        </RoleProtectedRoute>
+                      } 
+                    />
                   </Routes>
                 </DashboardLayout>
               </ProtectedRoute>
