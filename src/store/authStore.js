@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { mockApi } from '../services/mockApi';
+import { completeMockApi } from '../services/mockApi';
 import toast from 'react-hot-toast';
 
 /**

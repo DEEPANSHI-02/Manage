@@ -10,15 +10,13 @@ import OrganizationManagement from './pages/OrganizationManagement';
 // Import all three dashboards directly
 import SystemAdminDashboard from './pages/dashboards/SystemAdminDashboards';
 import TenantAdminDashboard from './pages/dashboards/TenantAdminDashboard';
-import UserPortal from './pages/UserPortal'; // NEW: Complete User Portal
-import Dashboard from './pages/Dashboard'; // Keep original as fallback
+import UserPortal from './pages/UserPortal'; // Enhanced User Portal
 
 import { 
   UserManagement,
   RoleManagement,
   PrivilegeManagement,
   LegalEntityManagement,
-  Profile,
   SettingsPage
 } from './pages/PlaceholderPages';
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -31,16 +29,6 @@ import './App.css';
 const RoleBasedDashboard = () => {
   const { user, userRole, loading, isSystemAdmin, isTenantAdmin, isRegularUser } = useAuth();
 
-  // Debug logging
-  console.log('=== DASHBOARD ROUTING DEBUG ===');
-  console.log('User:', user);
-  console.log('User Role:', userRole);
-  console.log('User Email:', user?.email);
-  console.log('Loading:', loading);
-  console.log('isSystemAdmin():', isSystemAdmin());
-  console.log('isTenantAdmin():', isTenantAdmin());
-  console.log('isRegularUser():', isRegularUser());
-
   if (loading) {
     return <LoadingSpinner message="Loading dashboard..." />;
   }
@@ -50,18 +38,12 @@ const RoleBasedDashboard = () => {
   }
 
   // Route to appropriate dashboard based on user role
-  console.log('Routing to dashboard for role:', userRole);
-  
-  // Use function checks instead of string comparison for better reliability
   if (isSystemAdmin()) {
-    console.log('Rendering SystemAdminDashboard');
     return <SystemAdminDashboard />;
   } else if (isTenantAdmin()) {
-    console.log('Rendering TenantAdminDashboard');
     return <TenantAdminDashboard />;
   } else {
-    console.log('Rendering UserPortal (NEW Complete User Portal)');
-    return <UserPortal />; // NEW: Use complete UserPortal instead of basic Dashboard
+    return <UserPortal />; // Enhanced User Portal for regular users
   }
 };
 
@@ -162,12 +144,12 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     
-                    {/* Role-based dashboard routing - UPDATED */}
+                    {/* Role-based dashboard routing */}
                     <Route path="/dashboard" element={<RoleBasedDashboard />} />
                     
-                    {/* NEW: Direct UserPortal route for testing/development */}
+                    {/* User Portal Routes - All route to the same UserPortal component with different tabs */}
                     <Route 
-                      path="/user-portal" 
+                      path="/my-profile" 
                       element={
                         <RoleProtectedRoute allowedRoles={['user']}>
                           <UserPortal />
@@ -175,12 +157,67 @@ function App() {
                       } 
                     />
                     
-                    {/* Fallback: Original basic dashboard */}
                     <Route 
-                      path="/basic-dashboard" 
+                      path="/my-organization" 
                       element={
                         <RoleProtectedRoute allowedRoles={['user']}>
-                          <Dashboard />
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/legal-entities" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin', 'user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/activity" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/security" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/my-settings" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+
+                    {/* Legacy profile route for compatibility */}
+                    <Route 
+                      path="/profile" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin', 'user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+
+                    {/* Legacy settings route for compatibility */}
+                    <Route 
+                      path="/settings" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin', 'user']}>
+                          <UserPortal />
                         </RoleProtectedRoute>
                       } 
                     />
@@ -235,71 +272,12 @@ function App() {
                       } 
                     />
                     
-                    {/* Legal Entity Management - All authenticated users */}
+                    {/* Admin Settings - System Admin and Tenant Admin */}
                     <Route 
-                      path="/legal-entities" 
-                      element={
-                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin', 'user']}>
-                          <LegalEntityManagement />
-                        </RoleProtectedRoute>
-                      } 
-                    />
-                    
-                    {/* Profile - All authenticated users (NEW: Can be part of UserPortal) */}
-                    <Route path="/profile" element={<Profile />} />
-                    
-                    {/* Settings - System Admin and Tenant Admin */}
-                    <Route 
-                      path="/settings" 
+                      path="/admin/settings" 
                       element={
                         <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
                           <SettingsPage />
-                        </RoleProtectedRoute>
-                      } 
-                    />
-
-                    {/* NEW: User-specific routes that integrate with UserPortal */}
-                    <Route 
-                      path="/my-organization" 
-                      element={
-                        <RoleProtectedRoute allowedRoles={['user']}>
-                          <UserPortal />
-                        </RoleProtectedRoute>
-                      } 
-                    />
-                    
-                    <Route 
-                      path="/my-profile" 
-                      element={
-                        <RoleProtectedRoute allowedRoles={['user']}>
-                          <UserPortal />
-                        </RoleProtectedRoute>
-                      } 
-                    />
-                    
-                    <Route 
-                      path="/my-activity" 
-                      element={
-                        <RoleProtectedRoute allowedRoles={['user']}>
-                          <UserPortal />
-                        </RoleProtectedRoute>
-                      } 
-                    />
-                    
-                    <Route 
-                      path="/my-security" 
-                      element={
-                        <RoleProtectedRoute allowedRoles={['user']}>
-                          <UserPortal />
-                        </RoleProtectedRoute>
-                      } 
-                    />
-                    
-                    <Route 
-                      path="/my-preferences" 
-                      element={
-                        <RoleProtectedRoute allowedRoles={['user']}>
-                          <UserPortal />
                         </RoleProtectedRoute>
                       } 
                     />
