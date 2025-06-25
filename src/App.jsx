@@ -7,7 +7,7 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import TenantManagement from './pages/TenantManagement';
 import OrganizationManagement from './pages/OrganizationManagement';
 
-// Import all three dashboards directly
+// Import all three dashboards directly - FIXED IMPORTS
 import SystemAdminDashboard from './pages/dashboards/SystemAdminDashboards';
 import TenantAdminDashboard from './pages/dashboards/TenantAdminDashboard';
 import UserPortal from './pages/UserPortal'; // Enhanced User Portal
@@ -23,27 +23,44 @@ import LoadingSpinner from './components/common/LoadingSpinner';
 import './App.css';
 
 /**
- * Role-Based Dashboard Component
+ * Role-Based Dashboard Component - FIXED VERSION
  * Renders appropriate dashboard based on user role
  */
 const RoleBasedDashboard = () => {
   const { user, userRole, loading, isSystemAdmin, isTenantAdmin, isRegularUser } = useAuth();
 
+  // Debug logging for routing
+  console.log('=== RoleBasedDashboard Debug ===');
+  console.log('User:', user);
+  console.log('UserRole:', userRole);
+  console.log('Loading:', loading);
+  console.log('isSystemAdmin():', isSystemAdmin());
+  console.log('isTenantAdmin():', isTenantAdmin());
+  console.log('isRegularUser():', isRegularUser());
+
   if (loading) {
+    console.log('🔄 Loading dashboard...');
     return <LoadingSpinner message="Loading dashboard..." />;
   }
 
   if (!user) {
-    return <LoadingSpinner message="Authenticating..." />;
+    console.log('❌ No user found, redirecting to login');
+    return <Navigate to="/login" replace />;
   }
 
   // Route to appropriate dashboard based on user role
   if (isSystemAdmin()) {
+    console.log('✅ Routing to SystemAdminDashboard');
     return <SystemAdminDashboard />;
   } else if (isTenantAdmin()) {
+    console.log('✅ Routing to TenantAdminDashboard');
     return <TenantAdminDashboard />;
-  } else {
+  } else if (isRegularUser()) {
+    console.log('✅ Routing to UserPortal');
     return <UserPortal />; // Enhanced User Portal for regular users
+  } else {
+    console.log('⚠️ Unknown role, defaulting to UserPortal. UserRole:', userRole);
+    return <UserPortal />; // Fallback to UserPortal
   }
 };
 
@@ -53,6 +70,8 @@ const RoleBasedDashboard = () => {
  */
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  
+  console.log('ProtectedRoute - isAuthenticated:', isAuthenticated, 'loading:', loading);
   
   if (loading) {
     return <LoadingSpinner />;
@@ -117,6 +136,36 @@ const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
 };
 
 /**
+ * Debug Auth Component - TEMPORARY FOR DEBUGGING
+ */
+const DebugAuth = () => {
+  const { user, userRole, isAuthenticated, isSystemAdmin, isTenantAdmin, isRegularUser } = useAuth();
+  
+  return (
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      right: 0, 
+      background: 'rgba(0,0,0,0.8)', 
+      color: 'white', 
+      padding: '10px', 
+      zIndex: 9999,
+      fontSize: '12px',
+      maxWidth: '300px'
+    }}>
+      <div><strong>🔍 DEBUG AUTH:</strong></div>
+      <div>Authenticated: {isAuthenticated ? '✅ YES' : '❌ NO'}</div>
+      <div>UserRole: {userRole || '❌ NONE'}</div>
+      <div>IsSystemAdmin: {isSystemAdmin() ? '✅ YES' : '❌ NO'}</div>
+      <div>IsTenantAdmin: {isTenantAdmin() ? '✅ YES' : '❌ NO'}</div>
+      <div>IsRegularUser: {isRegularUser() ? '✅ YES' : '❌ NO'}</div>
+      <div>User Email: {user?.email || '❌ NONE'}</div>
+      <div>User Name: {user?.name || '❌ NONE'}</div>
+    </div>
+  );
+};
+
+/**
  * Main Application Component
  * Handles routing and global layout
  */
@@ -124,6 +173,9 @@ function App() {
   return (
     <Router>
       <div className="App">
+        {/* DEBUG COMPONENT - REMOVE IN PRODUCTION */}
+        <DebugAuth />
+        
         <Routes>
           {/* Public Routes */}
           <Route 
@@ -144,7 +196,7 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     
-                    {/* Role-based dashboard routing */}
+                    {/* Role-based dashboard routing - MAIN DASHBOARD ROUTE */}
                     <Route path="/dashboard" element={<RoleBasedDashboard />} />
                     
                     {/* User Portal Routes - All route to the same UserPortal component with different tabs */}

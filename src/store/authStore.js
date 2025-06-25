@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { completeMockApi } from '../services/mockApi';
+import { mockApi } from '../services/mockApi'; // FIXED IMPORT
 import toast from 'react-hot-toast';
 
 /**
- * Enhanced Authentication Store with Role-Based Access
+ * Enhanced Authentication Store with Role-Based Access - FIXED VERSION
  */
 const useAuthStore = create(
   persist(
@@ -18,20 +18,27 @@ const useAuthStore = create(
       permissions: [],
       
       /**
-       * Login function with role detection based on demo credentials
+       * Login function with role detection based on demo credentials - FIXED VERSION
        */
       login: async (credentials) => {
         try {
           set({ loading: true });
           
-          const response = await mockApi.login(credentials);
+          console.log('🔐 Starting login process...');
+          console.log('Credentials:', { ...credentials, password: '***' });
+          
+          const response = await mockApi.login(credentials); // FIXED: Using mockApi instead of completeMockApi
           
           if (response.success) {
             const { access_token, user_id, name, email, tenant_id, organization_id } = response.data;
             
+            console.log('✅ Login API successful, getting user details...');
+            
             // Get user details including roles
-            const userDetailsResponse = await mockApi.getCurrentUser();
+            const userDetailsResponse = await mockApi.getCurrentUser(); // FIXED: Using mockApi
             const userDetails = userDetailsResponse.data;
+            
+            console.log('✅ User details retrieved:', userDetails);
             
             // Determine user role based on email (matching demo credentials)
             let userRole = 'user'; // default
@@ -83,6 +90,7 @@ const useAuthStore = create(
               privileges: userDetails.privileges || []
             };
             
+            // Set the auth state
             set({
               user,
               token: access_token,
@@ -92,11 +100,19 @@ const useAuthStore = create(
               permissions
             });
             
+            // Debug the final state
+            console.log('=== AuthStore State After Login ===');
+            console.log('userRole set to:', userRole);
+            console.log('isAuthenticated:', true);
+            console.log('user:', user);
+            console.log('token set:', !!access_token);
+            
             return { success: true };
           } else {
             throw new Error(response.message || 'Login failed');
           }
         } catch (error) {
+          console.error('❌ Login error:', error);
           set({ loading: false });
           const errorMessage = error.response?.data?.message || error.message || 'Login failed';
           toast.error(errorMessage);
@@ -108,6 +124,7 @@ const useAuthStore = create(
        * Logout function
        */
       logout: () => {
+        console.log('🚪 Logging out...');
         set({
           user: null,
           token: null,
@@ -129,27 +146,33 @@ const useAuthStore = create(
       },
       
       /**
-       * Check if user is system admin
+       * Check if user is system admin - ENHANCED WITH DEBUGGING
        */
       isSystemAdmin: () => {
         const { userRole } = get();
-        return userRole === 'system_admin';
+        const result = userRole === 'system_admin';
+        console.log('🔍 isSystemAdmin check:', { userRole, result });
+        return result;
       },
       
       /**
-       * Check if user is tenant admin
+       * Check if user is tenant admin - ENHANCED WITH DEBUGGING
        */
       isTenantAdmin: () => {
         const { userRole } = get();
-        return userRole === 'tenant_admin';
+        const result = userRole === 'tenant_admin';
+        console.log('🔍 isTenantAdmin check:', { userRole, result });
+        return result;
       },
       
       /**
-       * Check if user is regular user
+       * Check if user is regular user - ENHANCED WITH DEBUGGING
        */
       isRegularUser: () => {
         const { userRole } = get();
-        return userRole === 'user';
+        const result = userRole === 'user';
+        console.log('🔍 isRegularUser check:', { userRole, result });
+        return result;
       },
       
       /**
@@ -209,16 +232,20 @@ const useAuthStore = create(
       },
       
       /**
-       * Initialize authentication state from token
+       * Initialize authentication state from token - ENHANCED VERSION
        */
       initializeAuth: async () => {
         try {
           const { token } = get();
-          if (!token) return;
+          if (!token) {
+            console.log('🔍 No token found, skipping auth initialization');
+            return;
+          }
           
+          console.log('🔄 Initializing auth from stored token...');
           set({ loading: true });
           
-          const response = await mockApi.getCurrentUser();
+          const response = await mockApi.getCurrentUser(); // FIXED: Using mockApi
           
           if (response.success) {
             // Re-determine role based on stored user data
@@ -258,6 +285,7 @@ const useAuthStore = create(
             });
           } else {
             // Token is invalid, clear auth state
+            console.log('❌ Token invalid, clearing auth state');
             set({
               user: null,
               token: null,
@@ -269,6 +297,7 @@ const useAuthStore = create(
           }
         } catch (error) {
           // Token is invalid, clear auth state
+          console.log('❌ Auth initialization failed, clearing auth state:', error);
           set({
             user: null,
             token: null,

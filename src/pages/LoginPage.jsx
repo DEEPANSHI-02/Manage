@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState }  from 'react';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, LogIn, Building, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+// Add this import at the top of LoginPage.jsx
+import { mockApi } from '../services/mockApi';
 
 /**
  * Login Page Component
@@ -23,28 +25,43 @@ const LoginPage = () => {
   /**
    * Handle form submission
    */
-  const onSubmit = async (data) => {
+   const onSubmit = async (data) => {
     try {
       clearErrors();
+      console.log('🚀 Login form submitted with:', { ...data, password: '***' });
+      
       const result = await login({
         email: data.email,
         password: data.password,
         tenant_id: data.tenant_id || undefined
       });
 
-      if (!result.success) {
+      console.log('📋 Login result:', result);
+
+      if (result.success) {
+        console.log('✅ Login successful, navigating to dashboard...');
+        
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
+        
+      } else {
+        console.log('❌ Login failed:', result.error);
         setError('root', {
           type: 'manual',
           message: result.error || 'Login failed'
         });
       }
     } catch (error) {
+      console.error('❌ Login error:', error);
       setError('root', {
         type: 'manual',
-        message: 'An unexpected error occurred'
+        message: error.message || 'An unexpected error occurred'
       });
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
