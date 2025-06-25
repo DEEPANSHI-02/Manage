@@ -4,11 +4,18 @@ import { Toaster } from 'react-hot-toast';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/layout/DashboardLayout';
-import Dashboard from './pages/Dashboard';
 import TenantManagement from './pages/TenantManagement';
-import UserManagement from './pages/UserManagement'; 
-import OrganizationManagement from './pages/OrganizationManagement';
+
+// Import all three dashboards directly
+import SystemAdminDashboard from './pages/dashboards/SystemAdminDashboards';
+import TenantAdminDashboard from './pages/dashboards/TenantAdminDashboard';
+import UserDashboard from './pages/Dashboard';
+
+import DebugDashboard from './components/DebugDashboard';
+
 import { 
+  OrganizationManagement,
+  UserManagement,
   RoleManagement,
   PrivilegeManagement,
   LegalEntityManagement,
@@ -17,6 +24,47 @@ import {
 } from './pages/PlaceholderPages';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import './App.css';
+
+/**
+ * Role-Based Dashboard Component
+ * Renders appropriate dashboard based on user role
+ */
+const RoleBasedDashboard = () => {
+  const { user, userRole, loading } = useAuth();
+
+  // Debug logging
+  console.log('=== DASHBOARD ROUTING DEBUG ===');
+  console.log('User:', user);
+  console.log('User Role:', userRole);
+  console.log('User Email:', user?.email);
+  console.log('Loading:', loading);
+
+  if (loading) {
+    return <LoadingSpinner message="Loading dashboard..." />;
+  }
+
+  if (!user) {
+    return <LoadingSpinner message="Authenticating..." />;
+  }
+
+  // Route to appropriate dashboard based on user role
+  console.log('Routing to dashboard for role:', userRole);
+  
+  switch (userRole) {
+    case 'system_admin':
+      console.log('Rendering SystemAdminDashboard');
+      return <SystemAdminDashboard />;
+    
+    case 'tenant_admin':
+      console.log('Rendering TenantAdminDashboard');
+      return <TenantAdminDashboard />;
+    
+    case 'user':
+    default:
+      console.log('Rendering UserDashboard (default)');
+      return <UserDashboard />;
+  }
+};
 
 /**
  * Protected Route Component
@@ -73,7 +121,11 @@ function App() {
                 <DashboardLayout>
                   <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
+                    {/* Role-based dashboard routing */}
+                    {/* <Route path="/dashboard" element={<RoleBasedDashboard />} /> */}
+                    <Route path="/dashboard" element={<DebugDashboard />} />
+                    
+                    {/* Other routes */}
                     <Route path="/tenants" element={<TenantManagement />} />
                     <Route path="/organizations" element={<OrganizationManagement />} />
                     <Route path="/users" element={<UserManagement />} />
