@@ -1,82 +1,25 @@
+// src/components/layout/DashboardLayout.jsx
 import React, { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
 import { 
   Menu, 
   X, 
-  Home, 
   Building, 
-  Users, 
-  Shield, 
-  Key, 
-  FileText, 
-  Settings,
   LogOut,
   User,
   ChevronDown,
   Bell
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import RoleBasedNavigation from './RoleBasedNavigation';
 
 /**
- * Dashboard Layout Component
- * Provides the main layout structure with sidebar navigation
+ * Enhanced Dashboard Layout Component
+ * Provides role-based layout structure with dynamic navigation
  */
 const DashboardLayout = ({ children }) => {
-  const { user, logout } = useAuth();
-  const location = useLocation();
+  const { user, logout, getRoleDisplayName } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-
-  // Navigation items configuration
-  const navigationItems = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: Home,
-      current: location.pathname === '/dashboard'
-    },
-    {
-      name: 'Tenants',
-      href: '/tenants',
-      icon: Building,
-      current: location.pathname === '/tenants',
-      requiredPrivileges: ['tenant.manage']
-    },
-    {
-      name: 'Organizations',
-      href: '/organizations',
-      icon: Building,
-      current: location.pathname === '/organizations',
-      requiredPrivileges: ['organization.manage']
-    },
-    {
-      name: 'Users',
-      href: '/users',
-      icon: Users,
-      current: location.pathname === '/users',
-      requiredPrivileges: ['user.read']
-    },
-    {
-      name: 'Roles',
-      href: '/roles',
-      icon: Shield,
-      current: location.pathname === '/roles',
-      requiredPrivileges: ['role.manage']
-    },
-    {
-      name: 'Privileges',
-      href: '/privileges',
-      icon: Key,
-      current: location.pathname === '/privileges',
-      requiredPrivileges: ['role.manage']
-    },
-    {
-      name: 'Legal Entities',
-      href: '/legal-entities',
-      icon: FileText,
-      current: location.pathname === '/legal-entities'
-    }
-  ];
 
   /**
    * Handle logout
@@ -85,6 +28,50 @@ const DashboardLayout = ({ children }) => {
     logout();
     setUserMenuOpen(false);
   };
+
+  /**
+   * Get the appropriate app title based on user role
+   */
+  const getAppTitle = () => {
+    const { isSystemAdmin, isTenantAdmin } = useAuth();
+    
+    if (isSystemAdmin()) {
+      return 'System Management';
+    } else if (isTenantAdmin()) {
+      return 'Tenant Management';
+    } else {
+      return 'User Portal';
+    }
+  };
+
+  /**
+   * Get the appropriate theme color based on user role
+   */
+  const getThemeColors = () => {
+    const { isSystemAdmin, isTenantAdmin } = useAuth();
+    
+    if (isSystemAdmin()) {
+      return {
+        primary: 'bg-blue-600',
+        hover: 'hover:bg-blue-700',
+        focus: 'focus:ring-blue-500'
+      };
+    } else if (isTenantAdmin()) {
+      return {
+        primary: 'bg-green-600',
+        hover: 'hover:bg-green-700',
+        focus: 'focus:ring-green-500'
+      };
+    } else {
+      return {
+        primary: 'bg-indigo-600',
+        hover: 'hover:bg-indigo-700',
+        focus: 'focus:ring-indigo-500'
+      };
+    }
+  };
+
+  const themeColors = getThemeColors();
 
   /**
    * Sidebar Component
@@ -120,51 +107,27 @@ const DashboardLayout = ({ children }) => {
         )}
 
         {/* Logo */}
-        <div className="flex items-center h-16 flex-shrink-0 px-4 bg-indigo-600">
+        <div className={`flex items-center h-16 flex-shrink-0 px-4 ${themeColors.primary}`}>
           <Building className="h-8 w-8 text-white" />
           <span className="ml-2 text-white text-lg font-semibold">
-            User Management
+            {getAppTitle()}
           </span>
         </div>
 
         {/* Navigation */}
         <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-          <nav className="mt-5 px-2 space-y-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => mobile && setSidebarOpen(false)}
-                  className={`
-                    group flex items-center px-2 py-2 text-sm font-medium rounded-md
-                    ${item.current
-                      ? 'bg-indigo-100 text-indigo-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }
-                  `}
-                >
-                  <Icon className={`
-                    mr-3 flex-shrink-0 h-5 w-5
-                    ${item.current ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'}
-                  `} />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
+          <RoleBasedNavigation />
         </div>
 
         {/* User info */}
         <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
           <div className="flex items-center">
-            <div className="h-8 w-8 bg-indigo-500 rounded-full flex items-center justify-center">
+            <div className={`h-8 w-8 ${themeColors.primary} rounded-full flex items-center justify-center`}>
               <User className="h-5 w-5 text-white" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+              <p className="text-xs text-gray-500">{getRoleDisplayName()}</p>
             </div>
           </div>
         </div>
@@ -195,11 +158,21 @@ const DashboardLayout = ({ children }) => {
 
           {/* Navigation content */}
           <div className="flex-1 px-4 flex justify-between">
-            {/* Left side - could add breadcrumbs here */}
+            {/* Left side - Role indicator */}
             <div className="flex-1 flex items-center">
-              <h1 className="text-lg font-semibold text-gray-900">
-                {navigationItems.find(item => item.current)?.name || 'Dashboard'}
-              </h1>
+              <div className="flex items-center space-x-3">
+                <span className={`
+                  inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white
+                  ${themeColors.primary}
+                `}>
+                  {getRoleDisplayName()}
+                </span>
+                {user?.tenant_id && (
+                  <span className="text-sm text-gray-500">
+                    Tenant: {user.tenant_id.substring(0, 8)}...
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Right side - notifications and user menu */}
@@ -219,7 +192,7 @@ const DashboardLayout = ({ children }) => {
                   className="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
-                  <div className="h-8 w-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <div className={`h-8 w-8 ${themeColors.primary} rounded-full flex items-center justify-center`}>
                     <User className="h-5 w-5 text-white" />
                   </div>
                   <span className="hidden md:ml-3 md:block text-gray-700 text-sm font-medium">
@@ -231,20 +204,23 @@ const DashboardLayout = ({ children }) => {
                 {/* User dropdown menu */}
                 {userMenuOpen && (
                   <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <Link
-                      to="/profile"
+                    <div className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
+                      {user?.email}
+                    </div>
+                    <a
+                      href="/profile"
                       onClick={() => setUserMenuOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Your Profile
-                    </Link>
-                    <Link
-                      to="/settings"
+                    </a>
+                    <a
+                      href="/settings"
                       onClick={() => setUserMenuOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Settings
-                    </Link>
+                    </a>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
