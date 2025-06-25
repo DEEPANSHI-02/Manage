@@ -1,5 +1,6 @@
 import React, { useState }  from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom'; // ADDED: Missing import
 import { Eye, EyeOff, LogIn, Building, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 // Add this import at the top of LoginPage.jsx
@@ -11,6 +12,7 @@ import { mockApi } from '../services/mockApi';
  */
 const LoginPage = () => {
   const { login, loading } = useAuth();
+  const navigate = useNavigate(); // ADDED: Missing navigate hook
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -23,7 +25,7 @@ const LoginPage = () => {
   } = useForm();
 
   /**
-   * Handle form submission
+   * Handle form submission - FIXED VERSION
    */
    const onSubmit = async (data) => {
     try {
@@ -41,10 +43,8 @@ const LoginPage = () => {
       if (result.success) {
         console.log('✅ Login successful, navigating to dashboard...');
         
-        // Small delay to ensure state is updated
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 100);
+        // FIXED: Added proper navigation
+        navigate('/dashboard', { replace: true });
         
       } else {
         console.log('❌ Login failed:', result.error);

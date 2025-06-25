@@ -1,7 +1,7 @@
 // Updated UserPortal.jsx - Replace hardcoded data with API calls
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { MockApi } from '../services/mockApi'; 
+import { mockApi } from '../services/mockApi'; 
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 // ... other imports

@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
@@ -7,10 +7,10 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import TenantManagement from './pages/TenantManagement';
 import OrganizationManagement from './pages/OrganizationManagement';
 
-// Import all three dashboards directly - FIXED IMPORTS
+// Import all three dashboards
 import SystemAdminDashboard from './pages/dashboards/SystemAdminDashboards';
 import TenantAdminDashboard from './pages/dashboards/TenantAdminDashboard';
-import UserPortal from './pages/UserPortal'; // Enhanced User Portal
+import UserPortal from './pages/UserPortal';
 
 import { 
   UserManagement,
@@ -23,80 +23,99 @@ import LoadingSpinner from './components/common/LoadingSpinner';
 import './App.css';
 
 /**
- * Role-Based Dashboard Component - FIXED VERSION
- * Renders appropriate dashboard based on user role
+ * Role-Based Dashboard Component
  */
 const RoleBasedDashboard = () => {
-  const { user, userRole, loading, isSystemAdmin, isTenantAdmin, isRegularUser } = useAuth();
+  const { user, userRole, loading, isSystemAdmin, isTenantAdmin, isRegularUser, isAuthenticated } = useAuth();
 
-  // Debug logging for routing
-  console.log('=== RoleBasedDashboard Debug ===');
-  console.log('User:', user);
-  console.log('UserRole:', userRole);
-  console.log('Loading:', loading);
-  console.log('isSystemAdmin():', isSystemAdmin());
-  console.log('isTenantAdmin():', isTenantAdmin());
-  console.log('isRegularUser():', isRegularUser());
-
+  // Show loading spinner while authentication is being determined
   if (loading) {
-    console.log('🔄 Loading dashboard...');
-    return <LoadingSpinner message="Loading dashboard..." />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner message="Loading dashboard..." />
+      </div>
+    );
   }
 
-  if (!user) {
-    console.log('❌ No user found, redirecting to login');
+  // Redirect to login if not authenticated
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Route to appropriate dashboard based on user role
-  if (isSystemAdmin()) {
-    console.log('✅ Routing to SystemAdminDashboard');
-    return <SystemAdminDashboard />;
-  } else if (isTenantAdmin()) {
-    console.log('✅ Routing to TenantAdminDashboard');
-    return <TenantAdminDashboard />;
-  } else if (isRegularUser()) {
-    console.log('✅ Routing to UserPortal');
-    return <UserPortal />; // Enhanced User Portal for regular users
-  } else {
-    console.log('⚠️ Unknown role, defaulting to UserPortal. UserRole:', userRole);
-    return <UserPortal />; // Fallback to UserPortal
+  // Render appropriate dashboard based on user role
+  try {
+    if (isSystemAdmin()) {
+      return <SystemAdminDashboard />;
+    } else if (isTenantAdmin()) {
+      return <TenantAdminDashboard />;
+    } else if (isRegularUser() || !userRole) {
+      return <UserPortal />;
+    } else {
+      return <UserPortal />;
+    }
+  } catch (error) {
+    console.error('Error rendering dashboard:', error);
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Dashboard Error</h2>
+          <p className="text-gray-600 mb-4">There was an error loading your dashboard.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 };
 
 /**
  * Protected Route Component
- * Redirects to login if user is not authenticated
  */
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   
-  console.log('ProtectedRoute - isAuthenticated:', isAuthenticated, 'loading:', loading);
-  
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner message="Checking authentication..." />
+      </div>
+    );
   }
   
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
 };
 
 /**
- * Public Route Component  
- * Redirects to dashboard if user is already authenticated
+ * Public Route Component
  */
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner message="Loading..." />
+      </div>
+    );
   }
   
-  return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
 };
 
 /**
  * Role-Protected Route Component
- * Restricts access based on user roles
  */
 const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { userRole, isSystemAdmin, isTenantAdmin, isRegularUser } = useAuth();
@@ -115,18 +134,21 @@ const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 text-red-400">
+          <div className="mx-auto h-12 w-12 text-red-400 mb-4">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h3>
+          <p className="text-sm text-gray-500 mb-4">
             You don't have permission to access this page.
           </p>
-          <div className="mt-6">
-            <Navigate to="/dashboard" replace />
-          </div>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     );
@@ -136,45 +158,13 @@ const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
 };
 
 /**
- * Debug Auth Component - TEMPORARY FOR DEBUGGING
- */
-const DebugAuth = () => {
-  const { user, userRole, isAuthenticated, isSystemAdmin, isTenantAdmin, isRegularUser } = useAuth();
-  
-  return (
-    <div style={{ 
-      position: 'fixed', 
-      top: 0, 
-      right: 0, 
-      background: 'rgba(0,0,0,0.8)', 
-      color: 'white', 
-      padding: '10px', 
-      zIndex: 9999,
-      fontSize: '12px',
-      maxWidth: '300px'
-    }}>
-      <div><strong>🔍 DEBUG AUTH:</strong></div>
-      <div>Authenticated: {isAuthenticated ? '✅ YES' : '❌ NO'}</div>
-      <div>UserRole: {userRole || '❌ NONE'}</div>
-      <div>IsSystemAdmin: {isSystemAdmin() ? '✅ YES' : '❌ NO'}</div>
-      <div>IsTenantAdmin: {isTenantAdmin() ? '✅ YES' : '❌ NO'}</div>
-      <div>IsRegularUser: {isRegularUser() ? '✅ YES' : '❌ NO'}</div>
-      <div>User Email: {user?.email || '❌ NONE'}</div>
-      <div>User Name: {user?.name || '❌ NONE'}</div>
-    </div>
-  );
-};
-
-/**
- * Main Application Component
- * Handles routing and global layout
+ * Main Application Component - CLEANED UP VERSION
  */
 function App() {
   return (
     <Router>
       <div className="App">
-        {/* DEBUG COMPONENT - REMOVE IN PRODUCTION */}
-        <DebugAuth />
+        {/* DEBUG COMPONENTS REMOVED - Clean production version */}
         
         <Routes>
           {/* Public Routes */}
@@ -196,10 +186,10 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     
-                    {/* Role-based dashboard routing - MAIN DASHBOARD ROUTE */}
+                    {/* Role-based dashboard routing */}
                     <Route path="/dashboard" element={<RoleBasedDashboard />} />
                     
-                    {/* User Portal Routes - All route to the same UserPortal component with different tabs */}
+                    {/* User Portal Routes */}
                     <Route 
                       path="/my-profile" 
                       element={
@@ -254,7 +244,7 @@ function App() {
                       } 
                     />
 
-                    {/* Legacy profile route for compatibility */}
+                    {/* Legacy routes for compatibility */}
                     <Route 
                       path="/profile" 
                       element={
@@ -264,7 +254,6 @@ function App() {
                       } 
                     />
 
-                    {/* Legacy settings route for compatibility */}
                     <Route 
                       path="/settings" 
                       element={
@@ -274,7 +263,7 @@ function App() {
                       } 
                     />
                     
-                    {/* Tenant Management - Only for System Admins */}
+                    {/* Admin Routes */}
                     <Route 
                       path="/tenants" 
                       element={
@@ -284,7 +273,6 @@ function App() {
                       } 
                     />
                     
-                    {/* Organization Management - System Admin and Tenant Admin */}
                     <Route 
                       path="/organizations" 
                       element={
@@ -294,7 +282,6 @@ function App() {
                       } 
                     />
                     
-                    {/* User Management - System Admin and Tenant Admin */}
                     <Route 
                       path="/users" 
                       element={
@@ -304,7 +291,6 @@ function App() {
                       } 
                     />
                     
-                    {/* Role Management - System Admin and Tenant Admin */}
                     <Route 
                       path="/roles" 
                       element={
@@ -314,7 +300,6 @@ function App() {
                       } 
                     />
                     
-                    {/* Privilege Management - System Admin and Tenant Admin */}
                     <Route 
                       path="/privileges" 
                       element={
@@ -324,7 +309,6 @@ function App() {
                       } 
                     />
                     
-                    {/* Admin Settings - System Admin and Tenant Admin */}
                     <Route 
                       path="/admin/settings" 
                       element={
@@ -333,6 +317,9 @@ function App() {
                         </RoleProtectedRoute>
                       } 
                     />
+
+                    {/* Catch-all route */}
+                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
               </ProtectedRoute>
@@ -358,6 +345,13 @@ function App() {
               theme: {
                 primary: 'green',
                 secondary: 'black',
+              },
+            },
+            error: {
+              duration: 5000,
+              style: {
+                background: '#ef4444',
+                color: '#fff',
               },
             },
           }}
