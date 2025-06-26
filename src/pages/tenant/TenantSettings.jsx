@@ -18,7 +18,8 @@ const defaultSettings = {
 };
 
 const TenantSettings = () => {
-  const { tenantId } = useAuth();
+  const { user } = useAuth();
+  const tenantId = user?.tenant_id;
   const [settings, setSettings] = useState(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
