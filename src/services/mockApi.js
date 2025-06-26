@@ -369,6 +369,104 @@ class MockApiService {
       trace_id: this.generateId()
     };
   }
+
+  // --- User Roles & Privileges Mock Endpoints ---
+  async getUserRoles(userId) {
+    // For demo, return User and Manager for userId 1, User for others
+    return {
+      data: userId === 1 ? [mockData.roles[0], mockData.roles[1]] : [mockData.roles[0]],
+      status: 200
+    };
+  }
+
+  async getUserPrivileges(userId) {
+    // For demo, return all privileges for userId 1, some for others
+    return {
+      data: userId === 1 ? mockData.rolePrivileges.map(rp => mockData.privileges.find(p => p.id === rp.privilege_id)) : [mockData.rolePrivileges[0].privilege_id, mockData.rolePrivileges[1].privilege_id],
+      status: 200
+    };
+  }
+
+  async getAllRoles() {
+    return { data: mockData.roles, status: 200 };
+  }
+
+  async requestRoleChange(userId, roleId, action) {
+    // Simulate a delay and always succeed
+    await new Promise(res => setTimeout(res, 500));
+    return { status: 200, data: { success: true } };
+  }
+
+  // --- User Sessions Mock Endpoints ---
+  async getUserSessions(userId) {
+    // Return a list of mock sessions
+    return {
+      data: [
+        { id: 'sess-1', device: 'Chrome on Windows', location: 'San Francisco, CA', lastActive: new Date().toISOString(), current: true },
+        { id: 'sess-2', device: 'Safari on iPhone', location: 'New York, NY', lastActive: new Date(Date.now() - 3600000).toISOString(), current: false },
+        { id: 'sess-3', device: 'Edge on Mac', location: 'London, UK', lastActive: new Date(Date.now() - 7200000).toISOString(), current: false }
+      ],
+      status: 200
+    };
+  }
+
+  async terminateSession(userId, sessionId) {
+    // Simulate a delay and always succeed
+    await new Promise(res => setTimeout(res, 500));
+    return { status: 200, data: { success: true } };
+  }
+
+  // --- Security Mock Endpoints ---
+  async toggleTwoFactor(userId, enable) {
+    // Simulate a delay and return the new state
+    await new Promise(res => setTimeout(res, 500));
+    return { status: 200, data: { enabled: enable } };
+  }
+
+  async changePassword(userId, currentPassword, newPassword) {
+    // Simulate a delay and always succeed
+    await new Promise(res => setTimeout(res, 500));
+    return { status: 200, data: { success: true } };
+  }
+
+  // --- Preferences Mock Endpoint ---
+  async savePreferences(userId, preferences) {
+    // Simulate a delay and always succeed
+    await new Promise(res => setTimeout(res, 500));
+    return { status: 200, data: { success: true } };
+  }
+
+  // --- User Deactivation Mock Endpoint ---
+  async deactivateUser(userId) {
+    // Simulate a delay and always succeed
+    await new Promise(res => setTimeout(res, 500));
+    return { status: 200, data: { status: 'INACTIVE' } };
+  }
+
+  // --- Persistent Security Settings ---
+  async getSecuritySettings(userId) {
+    const settings = getPersisted('userSecuritySettings', {
+      lastPasswordChange: new Date().toISOString(),
+      twoFactorEnabled: false,
+      sessionTimeout: 3600,
+      loginHistory: [
+        {
+          id: 1,
+          ip: '192.168.1.1',
+          location: 'San Francisco, CA',
+          device: 'Chrome on Windows',
+          timestamp: new Date().toISOString(),
+          success: true
+        }
+      ]
+    });
+    return { data: settings, status: 200 };
+  }
+
+  async saveSecuritySettings(userId, settings) {
+    setPersisted('userSecuritySettings', settings);
+    return { status: 200, data: { success: true } };
+  }
 }
 
 // Create single instance
@@ -380,3 +478,77 @@ export const completeMockApi = mockApiInstance;
 
 // Default export
 export default mockApiInstance;
+
+// --- Persistent User Profile, Preferences, and Legal Entities ---
+function getPersisted(key, fallback) {
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : fallback;
+}
+function setPersisted(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+// User Profile
+mockApi.getCurrentUser = async () => {
+  const profile = getPersisted('userProfile', {
+    id: 1,
+    first_name: 'Mike',
+    last_name: 'Developer',
+    email: 'mike.developer@techcorp.com',
+    job_title: 'Frontend Developer',
+    department: 'Engineering',
+    status: 'ACTIVE',
+  });
+  return { data: profile, status: 200, success: true };
+};
+mockApi.updateCurrentUser = async (updatedProfile) => {
+  setPersisted('userProfile', updatedProfile);
+  return { data: updatedProfile, status: 200, success: true };
+};
+
+// Preferences
+mockApi.getPreferences = async (userId) => {
+  const prefs = getPersisted('userPreferences', {
+    theme: 'light',
+    language: 'English',
+    timezone: 'America/Los_Angeles',
+    emailNotifications: true,
+    pushNotifications: true,
+    smsNotifications: false,
+    weeklyDigest: true
+  });
+  return { data: prefs, status: 200 };
+};
+mockApi.savePreferences = async (userId, preferences) => {
+  setPersisted('userPreferences', preferences);
+  return { status: 200, data: { success: true } };
+};
+
+// Legal Entities
+mockApi.getLegalEntities = async (tenantId) => {
+  const key = `legalEntities_${tenantId}`;
+  const entities = getPersisted(key, []);
+  return { data: entities, status: 200 };
+};
+mockApi.createLegalEntity = async (tenantId, entityData) => {
+  const key = `legalEntities_${tenantId}`;
+  const entities = getPersisted(key, []);
+  const newEntity = { ...entityData, id: Date.now(), status: 'ACTIVE' };
+  const updated = [...entities, newEntity];
+  setPersisted(key, updated);
+  return { data: newEntity, status: 200 };
+};
+mockApi.updateLegalEntity = async (entityId, entityData) => {
+  // Find the correct tenant key
+  const allKeys = Object.keys(localStorage).filter(k => k.startsWith('legalEntities_'));
+  for (const key of allKeys) {
+    const entities = getPersisted(key, []);
+    const idx = entities.findIndex(e => e.id === entityId);
+    if (idx !== -1) {
+      entities[idx] = { ...entities[idx], ...entityData };
+      setPersisted(key, entities);
+      return { data: entities[idx], status: 200 };
+    }
+  }
+  return { status: 404 };
+};

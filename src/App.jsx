@@ -318,6 +318,24 @@ function App() {
                       } 
                     />
 
+                    {/* New routes for regular users */}
+                    <Route 
+                      path="/roles-privileges" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/sessions" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['user']}>
+                          <UserPortal />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+
                     {/* Catch-all route */}
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Routes>

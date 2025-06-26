@@ -20,13 +20,23 @@ const DashboardLayout = ({ children }) => {
   const { user, logout, getRoleDisplayName } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   /**
    * Handle logout
    */
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = () => {
     logout();
     setUserMenuOpen(false);
+    setShowLogoutConfirm(false);
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   /**
@@ -222,7 +232,7 @@ const DashboardLayout = ({ children }) => {
                       Settings
                     </a>
                     <button
-                      onClick={handleLogout}
+                      onClick={handleLogoutClick}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       <LogOut className="inline h-4 w-4 mr-2" />
@@ -244,6 +254,35 @@ const DashboardLayout = ({ children }) => {
           </div>
         </main>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Confirm Logout</h3>
+              <button onClick={handleCancelLogout} className="text-gray-400 hover:text-gray-600 focus:outline-none">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-gray-700 mb-6">Are you sure you want to sign out?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelLogout}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

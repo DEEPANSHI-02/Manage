@@ -22,7 +22,8 @@ export const useAuth = () => {
     isRegularUser,
     getDashboardType,
     getRoleDisplayName,
-    initializeAuth
+    initializeAuth,
+    checkTokenValidity
   } = useAuthStore();
 
   // Initialize authentication on mount - ENHANCED VERSION
@@ -59,6 +60,14 @@ export const useAuth = () => {
       console.log('================================');
     }
   }, [user, userRole, isSystemAdmin, isTenantAdmin, isRegularUser, isAuthenticated]);
+
+  // Periodically check token validity and auto-logout if expired
+  useEffect(() => {
+    const check = () => checkTokenValidity();
+    check(); // Check on mount
+    const interval = setInterval(check, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, [checkTokenValidity]);
 
   return {
     // State

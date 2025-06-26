@@ -16,6 +16,7 @@ const useAuthStore = create(
       loading: false,
       userRole: null, // 'system_admin', 'tenant_admin', 'user'
       permissions: [],
+      tokenExpiresAt: null, // NEW: expiration timestamp
       
       /**
        * Login function with role detection based on demo credentials - FIXED VERSION
@@ -90,6 +91,10 @@ const useAuthStore = create(
               privileges: userDetails.privileges || []
             };
             
+            // Set token expiration (15 minutes from now)
+            const expiresAt = Date.now() + 15 * 60 * 1000;
+            localStorage.setItem('tokenExpiresAt', expiresAt);
+            
             // Set the auth state
             set({
               user,
@@ -97,7 +102,8 @@ const useAuthStore = create(
               isAuthenticated: true,
               loading: false,
               userRole,
-              permissions
+              permissions,
+              tokenExpiresAt: expiresAt // NEW
             });
             
             // Debug the final state
@@ -131,8 +137,10 @@ const useAuthStore = create(
           isAuthenticated: false,
           loading: false,
           userRole: null,
-          permissions: []
+          permissions: [],
+          tokenExpiresAt: null // NEW
         });
+        localStorage.removeItem('tokenExpiresAt'); // NEW
         toast.success('Logged out successfully');
       },
       
@@ -237,6 +245,22 @@ const useAuthStore = create(
       initializeAuth: async () => {
         try {
           const { token } = get();
+          // Check token expiration
+          const expiresAt = Number(localStorage.getItem('tokenExpiresAt'));
+          if (expiresAt && Date.now() > expiresAt) {
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              loading: false,
+              userRole: null,
+              permissions: [],
+              tokenExpiresAt: null
+            });
+            localStorage.removeItem('tokenExpiresAt');
+            toast.error('Session expired. Please log in again.');
+            return;
+          }
           if (!token) {
             console.log('🔍 No token found, skipping auth initialization');
             return;
@@ -307,6 +331,20 @@ const useAuthStore = create(
             permissions: []
           });
         }
+      },
+      
+      /**
+       * Check if token is expired and auto-logout if so
+       */
+      checkTokenValidity: () => {
+        const { tokenExpiresAt, isAuthenticated, logout } = get();
+        const expiresAt = tokenExpiresAt || Number(localStorage.getItem('tokenExpiresAt'));
+        if (isAuthenticated && expiresAt && Date.now() > expiresAt) {
+          toast.error('Session expired. Please log in again.');
+          logout();
+          return false;
+        }
+        return true;
       }
     }),
     {
@@ -316,7 +354,8 @@ const useAuthStore = create(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         userRole: state.userRole,
-        permissions: state.permissions
+        permissions: state.permissions,
+        tokenExpiresAt: state.tokenExpiresAt // NEW
       }),
     }
   )
