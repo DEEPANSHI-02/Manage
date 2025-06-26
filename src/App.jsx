@@ -23,6 +23,9 @@ import SystemConfiguration from './pages/system/SystemConfiguration';
 import SecurityCenter from './pages/system/SecurityCenter';
 import APIManagement from './pages/system/APIManagement';
 import GlobalReports from './pages/system/GlobalReports';
+import TenantPrivilegeManagement from './pages/tenant/PrivilegeManagement';
+import TenantLegalEntityManagement from './pages/tenant/LegalEntityManagement';
+import TenantOrganizationManagement from './pages/tenant/OrganizationManagement';
 
 /**
  * Role-Based Dashboard Component
@@ -213,8 +216,8 @@ function App() {
                     <Route 
                       path="/legal-entities" 
                       element={
-                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin', 'user']}>
-                          <UserPortal />
+                        <RoleProtectedRoute allowedRoles={['tenant_admin']}>
+                          <TenantLegalEntityManagement />
                         </RoleProtectedRoute>
                       } 
                     />
@@ -278,8 +281,8 @@ function App() {
                     <Route 
                       path="/organizations" 
                       element={
-                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
-                          <OrganizationManagement />
+                        <RoleProtectedRoute allowedRoles={['tenant_admin']}>
+                          <TenantOrganizationManagement />
                         </RoleProtectedRoute>
                       } 
                     />
@@ -349,6 +352,15 @@ function App() {
 
                     {/* Catch-all route */}
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+                    <Route 
+                      path="/privileges" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['tenant_admin']}>
+                          <TenantPrivilegeManagement />
+                        </RoleProtectedRoute>
+                      } 
+                    />
                   </Routes>
                 </DashboardLayout>
               </ProtectedRoute>

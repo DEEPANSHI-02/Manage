@@ -35,7 +35,8 @@ const LoginPage = () => {
       const result = await login({
         email: data.email,
         password: data.password,
-        tenant_id: data.tenant_id || undefined
+        tenant_id: data.tenant_id || undefined,
+        rememberMe
       });
 
       console.log('📋 Login result:', result);

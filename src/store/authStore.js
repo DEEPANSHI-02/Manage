@@ -59,12 +59,10 @@ const useAuthStore = create(
               userRole = 'system_admin';
               permissions = ['all']; // System admin has all permissions
               console.log('✅ Assigned role: system_admin');
-              toast.success('Welcome System Administrator!');
             } else if (cleanEmail === 'sarah.manager@techcorp.com') {
               userRole = 'tenant_admin';
               permissions = ['tenant.manage', 'user.manage', 'organization.manage', 'role.manage'];
               console.log('✅ Assigned role: tenant_admin');
-              toast.success('Welcome Tenant Administrator!');
             } else if (cleanEmail === 'mike.developer@techcorp.com') {
               userRole = 'user';
               permissions = ['user.read', 'profile.update'];
@@ -91,9 +89,11 @@ const useAuthStore = create(
               privileges: userDetails.privileges || []
             };
             
-            // Set token expiration (15 minutes from now)
-            const expiresAt = Date.now() + 15 * 60 * 1000;
-            localStorage.setItem('tokenExpiresAt', expiresAt);
+            // Always use localStorage for session persistence
+            localStorage.setItem('token', access_token);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('userRole', userRole);
+            localStorage.setItem('permissions', JSON.stringify(permissions));
             
             // Set the auth state
             set({
@@ -102,8 +102,7 @@ const useAuthStore = create(
               isAuthenticated: true,
               loading: false,
               userRole,
-              permissions,
-              tokenExpiresAt: expiresAt // NEW
+              permissions
             });
             
             // Debug the final state
@@ -137,10 +136,12 @@ const useAuthStore = create(
           isAuthenticated: false,
           loading: false,
           userRole: null,
-          permissions: [],
-          tokenExpiresAt: null // NEW
+          permissions: []
         });
-        localStorage.removeItem('tokenExpiresAt'); // NEW
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('permissions');
         toast.success('Logged out successfully');
       },
       
@@ -240,110 +241,29 @@ const useAuthStore = create(
       },
       
       /**
-       * Initialize authentication state from token - ENHANCED VERSION
+       * Initialize authentication from localStorage
        */
-      initializeAuth: async () => {
-        try {
-          const { token } = get();
-          // Check token expiration
-          const expiresAt = Number(localStorage.getItem('tokenExpiresAt'));
-          if (expiresAt && Date.now() > expiresAt) {
-            set({
-              user: null,
-              token: null,
-              isAuthenticated: false,
-              loading: false,
-              userRole: null,
-              permissions: [],
-              tokenExpiresAt: null
-            });
-            localStorage.removeItem('tokenExpiresAt');
-            toast.error('Session expired. Please log in again.');
-            return;
-          }
-          if (!token) {
-            console.log('🔍 No token found, skipping auth initialization');
-            return;
-          }
-          
-          console.log('🔄 Initializing auth from stored token...');
-          set({ loading: true });
-          
-          const response = await mockApi.getCurrentUser(); // FIXED: Using mockApi
-          
-          if (response.success) {
-            // Re-determine role based on stored user data
-            const user = response.data;
-            let userRole = 'user';
-            let permissions = [];
-            
-            console.log('=== INIT AUTH ROLE DETECTION ===');
-            console.log('User email from response:', user.email);
-            
-            // Clean email to handle any whitespace issues
-            const cleanEmail = user.email?.trim()?.toLowerCase();
-            console.log('Clean email:', cleanEmail);
-            
-            if (cleanEmail === 'admin@techcorp.com') {
-              userRole = 'system_admin';
-              permissions = ['all'];
-              console.log('✅ InitAuth - Assigned role: system_admin');
-            } else if (cleanEmail === 'sarah.manager@techcorp.com') {
-              userRole = 'tenant_admin';
-              permissions = ['tenant.manage', 'user.manage', 'organization.manage', 'role.manage'];
-              console.log('✅ InitAuth - Assigned role: tenant_admin');
-            } else {
-              userRole = 'user';
-              permissions = ['user.read', 'profile.update'];
-              console.log('✅ InitAuth - Assigned role: user');
-            }
-            
-            console.log('InitAuth Final userRole:', userRole);
-            
-            set({
-              user: response.data,
-              isAuthenticated: true,
-              loading: false,
-              userRole,
-              permissions
-            });
-          } else {
-            // Token is invalid, clear auth state
-            console.log('❌ Token invalid, clearing auth state');
-            set({
-              user: null,
-              token: null,
-              isAuthenticated: false,
-              loading: false,
-              userRole: null,
-              permissions: []
-            });
-          }
-        } catch (error) {
-          // Token is invalid, clear auth state
-          console.log('❌ Auth initialization failed, clearing auth state:', error);
+      initializeAuth: () => {
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+        const userRole = localStorage.getItem('userRole');
+        const permissions = JSON.parse(localStorage.getItem('permissions')) || [];
+        if (token && user) {
           set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            loading: false,
-            userRole: null,
-            permissions: []
+            token,
+            user,
+            isAuthenticated: true,
+            userRole,
+            permissions
           });
         }
       },
       
       /**
-       * Check if token is expired and auto-logout if so
+       * Check token validity (always valid now)
        */
       checkTokenValidity: () => {
-        const { tokenExpiresAt, isAuthenticated, logout } = get();
-        const expiresAt = tokenExpiresAt || Number(localStorage.getItem('tokenExpiresAt'));
-        if (isAuthenticated && expiresAt && Date.now() > expiresAt) {
-          toast.error('Session expired. Please log in again.');
-          logout();
-          return false;
-        }
+        // No-op: always valid until logout
         return true;
       }
     }),

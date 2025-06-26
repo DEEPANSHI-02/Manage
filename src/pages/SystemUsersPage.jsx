@@ -28,6 +28,7 @@ import {
   Unlock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Papa from 'papaparse';
 
 // Mock API for System Users
 const mockSystemUsersApi = {
@@ -212,6 +213,7 @@ const SystemUsersPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const fileInputRef = React.useRef();
 
   useEffect(() => {
     loadUsers();
@@ -327,6 +329,63 @@ const SystemUsersPage = () => {
   const uniqueTenants = [...new Set(users.map(u => ({ id: u.tenantId, name: u.tenantName })))];
   const uniqueRoles = [...new Set(users.map(u => u.role))];
 
+  // Export users to CSV
+  const handleExport = () => {
+    if (!users.length) return toast.error('No users to export');
+    const csv = Papa.unparse(users.map(u => ({
+      Name: u.name,
+      Email: u.email,
+      Tenant: u.tenantName,
+      Role: u.role,
+      Status: u.status,
+      Department: u.department,
+      Location: u.location,
+      JoinDate: u.joinDate,
+      Phone: u.phone,
+      TwoFactorEnabled: u.twoFactorEnabled ? 'Yes' : 'No',
+      LastLogin: u.lastLogin
+    })));
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'users.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Exported users to CSV');
+  };
+
+  // Import users from CSV
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    Papa.parse(file, {
+      header: true,
+      complete: (results) => {
+        const imported = results.data.filter(row => row.Name && row.Email);
+        if (!imported.length) return toast.error('No valid users found in file');
+        setUsers(prev => [...prev, ...imported.map(row => ({
+          id: `imported-${Date.now()}-${Math.random()}`,
+          name: row.Name,
+          email: row.Email,
+          tenantName: row.Tenant,
+          role: row.Role,
+          status: row.Status,
+          department: row.Department,
+          location: row.Location,
+          joinDate: row.JoinDate,
+          phone: row.Phone,
+          twoFactorEnabled: row.TwoFactorEnabled === 'Yes',
+          lastLogin: row.LastLogin
+        }))]);
+        toast.success('Imported users from CSV');
+      },
+      error: () => toast.error('Failed to import users')
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -350,14 +409,15 @@ const SystemUsersPage = () => {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </button>
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+              <button onClick={handleExport} className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </button>
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+              <button onClick={() => fileInputRef.current.click()} className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                 <Upload className="h-4 w-4 mr-2" />
                 Import
               </button>
+              <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImport} />
             </div>
           </div>
         </div>
