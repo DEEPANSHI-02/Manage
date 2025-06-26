@@ -528,6 +528,13 @@ class MockApiService {
       trace_id: this.generateId()
     };
   }
+
+  async getRolePrivileges(roleId) {
+    await this.delay();
+    const rolePrivs = mockData.rolePrivileges.filter(rp => rp.role_id === roleId);
+    const privileges = rolePrivs.map(rp => mockData.privileges.find(p => p.id === rp.privilege_id)).filter(Boolean);
+    return { success: true, data: privileges };
+  }
 }
 
 // Create single instance

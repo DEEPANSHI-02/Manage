@@ -31,6 +31,11 @@ const RoleManagement = () => {
   const [showPrivilegeModal, setShowPrivilegeModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [privLoading, setPrivLoading] = useState(false);
+  const [rolePrivileges, setRolePrivileges] = useState([]);
 
   useEffect(() => {
     loadRoles();
@@ -66,6 +71,73 @@ const RoleManagement = () => {
     role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     role.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  useEffect(() => {
+    if (showPrivilegeModal && selectedRole) {
+      setPrivLoading(true);
+      mockApi.getRolePrivileges(selectedRole.id)
+        .then(res => setRolePrivileges(res.data ? res.data.map(p => p.id) : []))
+        .finally(() => setPrivLoading(false));
+    }
+  }, [showPrivilegeModal, selectedRole]);
+
+  const handleCreateRole = async (form) => {
+    setCreateLoading(true);
+    try {
+      await mockApi.createRole(user.tenant_id, form);
+      setShowCreateModal(false);
+      loadRoles();
+      toast.success('Role created');
+    } catch {
+      toast.error('Failed to create role');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleEditRole = async (form) => {
+    setEditLoading(true);
+    try {
+      await mockApi.updateRole(selectedRole.id, form);
+      setShowEditModal(false);
+      setSelectedRole(null);
+      loadRoles();
+      toast.success('Role updated');
+    } catch {
+      toast.error('Failed to update role');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteRole = async () => {
+    setDeleteLoading(true);
+    try {
+      await mockApi.deleteRole(selectedRole.id);
+      setShowDeleteModal(false);
+      setSelectedRole(null);
+      loadRoles();
+      toast.success('Role deleted');
+    } catch {
+      toast.error('Failed to delete role');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleSavePrivileges = async (privIds) => {
+    setPrivLoading(true);
+    try {
+      await mockApi.updateRolePrivileges(selectedRole.id, privIds);
+      setShowPrivilegeModal(false);
+      setSelectedRole(null);
+      toast.success('Privileges updated');
+    } catch {
+      toast.error('Failed to update privileges');
+    } finally {
+      setPrivLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -283,7 +355,80 @@ const RoleManagement = () => {
       </div>
 
       {/* Modals would go here */}
-      {/* CreateRoleModal, EditRoleModal, DeleteRoleModal, PrivilegeManagementModal */}
+      <RoleModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onSave={handleCreateRole} loading={createLoading} title="Create Role" />
+      <RoleModal isOpen={showEditModal} onClose={() => setShowEditModal(false)} onSave={handleEditRole} initialData={selectedRole} loading={editLoading} title="Edit Role" />
+      <DeleteRoleModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} onDelete={handleDeleteRole} role={selectedRole} loading={deleteLoading} />
+      <PrivilegeManagementModal isOpen={showPrivilegeModal} onClose={() => setShowPrivilegeModal(false)} role={selectedRole} privileges={privileges} assigned={rolePrivileges} onSave={handleSavePrivileges} loading={privLoading} />
+    </div>
+  );
+};
+
+const RoleModal = ({ isOpen, onClose, onSave, initialData, loading, title }) => {
+  const [form, setForm] = useState(initialData || { name: '', description: '' });
+  const [error, setError] = useState('');
+  useEffect(() => { setForm(initialData || { name: '', description: '' }); setError(''); }, [initialData, isOpen]);
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <form onSubmit={e => { e.preventDefault(); if (!form.name.trim()) return setError('Name is required'); onSave(form); }} className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md space-y-4 relative">
+        <h2 className="text-lg font-bold mb-2 flex items-center gap-2 text-green-700">{title}</h2>
+        <div>
+          <label className="block text-sm font-medium">Name</label>
+          <input name="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full border rounded px-3 py-2 mt-1" required />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Description</label>
+          <textarea name="description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full border rounded px-3 py-2 mt-1" rows={3} />
+        </div>
+        {error && <div className="text-red-600 text-sm">{error}</div>}
+        <div className="flex gap-2 justify-end mt-4">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
+          <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700" disabled={loading}>{loading ? 'Saving...' : 'Save'}</button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+const DeleteRoleModal = ({ isOpen, onClose, onDelete, role, loading }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md space-y-4 relative">
+        <h2 className="text-lg font-bold mb-2 text-red-700 flex items-center gap-2"><Trash2 className="h-5 w-5 text-red-600" /> Delete Role</h2>
+        <p>Are you sure you want to delete the role <span className="font-semibold">{role?.name}</span>?</p>
+        <div className="flex gap-2 justify-end mt-4">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
+          <button type="button" onClick={onDelete} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700" disabled={loading}>{loading ? 'Deleting...' : 'Delete'}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PrivilegeManagementModal = ({ isOpen, onClose, role, privileges, assigned, onSave, loading }) => {
+  const [selected, setSelected] = useState(assigned || []);
+  useEffect(() => { setSelected(assigned || []); }, [assigned, isOpen]);
+  if (!isOpen || !role) return null;
+  const toggle = (privId) => setSelected(sel => sel.includes(privId) ? sel.filter(id => id !== privId) : [...sel, privId]);
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg space-y-4 relative">
+        <h2 className="text-lg font-bold mb-2 flex items-center gap-2 text-green-700"><Key className="h-5 w-5 text-green-600" /> Manage Privileges for {role.name}</h2>
+        <div className="max-h-64 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-2">
+          {privileges.map(priv => (
+            <label key={priv.id} className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={selected.includes(priv.id)} onChange={() => toggle(priv.id)} />
+              <span>{priv.name}</span>
+              <span className="text-xs text-gray-400">({priv.category})</span>
+            </label>
+          ))}
+        </div>
+        <div className="flex gap-2 justify-end mt-4">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
+          <button type="button" onClick={() => onSave(selected)} className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700" disabled={loading}>{loading ? 'Saving...' : 'Save'}</button>
+        </div>
+      </div>
     </div>
   );
 };
