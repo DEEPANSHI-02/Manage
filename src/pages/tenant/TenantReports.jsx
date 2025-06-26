@@ -54,6 +54,22 @@ const TenantReports = () => {
     // In real implementation, this would trigger report generation
   };
 
+  const exportReport = () => {
+    // Export userGrowth as CSV
+    const rows = [
+      ['Month', 'Users', 'Active Users'],
+      ...reportData.userGrowth.map(row => [row.month, row.users, row.active])
+    ];
+    const csvContent = rows.map(e => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'user-growth-report.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -78,7 +94,7 @@ const TenantReports = () => {
                 <option value="1y">Last year</option>
               </select>
               <button
-                onClick={() => generateReport('comprehensive')}
+                onClick={exportReport}
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
               >
                 <Download className="h-4 w-4 mr-2" />

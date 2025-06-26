@@ -27,6 +27,8 @@ import TenantPrivilegeManagement from './pages/tenant/PrivilegeManagement';
 import TenantLegalEntityManagement from './pages/tenant/LegalEntityManagement';
 import TenantOrganizationManagement from './pages/tenant/OrganizationManagement';
 import TenantSettings from './pages/tenant/TenantSettings';
+import TenantReports from './pages/tenant/TenantReports';
+import TenantNotifications from './pages/tenant/Notifications';
 
 /**
  * Role-Based Dashboard Component
@@ -368,6 +370,24 @@ function App() {
                       element={
                         <RoleProtectedRoute allowedRoles={['tenant_admin']}>
                           <TenantPrivilegeManagement />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+
+                    <Route 
+                      path="/tenant/reports" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['tenant_admin']}>
+                          <TenantReports />
+                        </RoleProtectedRoute>
+                      } 
+                    />
+
+                    <Route 
+                      path="/tenant/notifications" 
+                      element={
+                        <RoleProtectedRoute allowedRoles={['tenant_admin']}>
+                          <TenantNotifications />
                         </RoleProtectedRoute>
                       } 
                     />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Building, 
@@ -40,6 +40,7 @@ const TenantAdminDashboard = () => {
   const [tenantActivity, setTenantActivity] = useState([]);
   const [pendingTasks, setPendingTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadTenantDashboardData();
@@ -205,19 +206,19 @@ const TenantAdminDashboard = () => {
       description: 'Manage user privileges and permissions',
       href: '/privileges',
       icon: Key,
-      color: 'bg-yellow-600 hover:bg-yellow-700'
+      color: 'bg-green-600 hover:bg-orange-400 hover:text-white'
     },
     {
       name: 'Tenant Settings',
       description: 'Configure tenant preferences',
-      href: '/settings',
+      href: '/tenant/settings',
       icon: Settings,
       color: 'bg-gray-600 hover:bg-gray-700'
     },
     {
       name: 'Analytics & Reports',
       description: 'View user and organization analytics',
-      href: '/reports',
+      href: '/tenant/reports',
       icon: BarChart3,
       color: 'bg-indigo-600 hover:bg-indigo-700'
     }
