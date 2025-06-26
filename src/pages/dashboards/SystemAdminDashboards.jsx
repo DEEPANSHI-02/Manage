@@ -1,4 +1,4 @@
-// src/pages/dashboards/EnhancedSystemAdminDashboard.jsx
+// src/pages/dashboards/SystemAdminDashboard.jsx - Updated with Wizard Integration
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -34,8 +34,12 @@ import {
   Cpu,
   MemoryStick,
   Edit,
-  Trash2
+  Trash2,
+  Sparkles
 } from 'lucide-react';
+
+// Import the wizard
+import TenantOnboardingWizard from '../../components/modals/TenantOnboardingWizard';
 
 // Import the enhanced analytics dashboard
 import AdvancedAnalyticsDashboard from '../../components/charts/AdvancedDataVisualization';
@@ -146,6 +150,9 @@ const EnhancedSystemAdminDashboard = () => {
     error: analyticsError, 
     refreshData: refreshAnalytics 
   } = useAnalytics('system');
+
+  // Wizard state
+  const [showWizard, setShowWizard] = useState(false);
 
   const [systemStats, setSystemStats] = useState({
     totalTenants: 0,
@@ -346,6 +353,52 @@ const EnhancedSystemAdminDashboard = () => {
     toast.success('Alert resolved');
   };
 
+  // Handle wizard completion
+  const handleWizardComplete = async (tenantData) => {
+    try {
+      console.log('Creating tenant with data:', tenantData);
+      
+      // Create new tenant object
+      const newTenant = {
+        id: `tenant-${Date.now()}`,
+        name: tenantData.tenant.name,
+        industry: tenantData.tenant.industry,
+        employee_count: tenantData.organizations.reduce((sum, org) => sum + (org.user_count || 0), 0),
+        active: true,
+        created_at: new Date().toISOString()
+      };
+
+      // Add to tenants list
+      setTenants(prev => [newTenant, ...prev]);
+      
+      // Update system stats
+      setSystemStats(prev => ({
+        ...prev,
+        totalTenants: prev.totalTenants + 1,
+        totalUsers: prev.totalUsers + tenantData.users.length,
+        totalOrganizations: prev.totalOrganizations + tenantData.organizations.length
+      }));
+
+      // Add activity log entry
+      setGlobalActivity(prev => [{
+        id: Date.now(),
+        type: 'tenant_created',
+        description: `New tenant "${tenantData.tenant.name}" created via onboarding wizard`,
+        user: user.name,
+        time: 'just now',
+        severity: 'info',
+        icon: Building
+      }, ...prev.slice(0, 4)]);
+      
+      toast.success(`Tenant "${tenantData.tenant.name}" created successfully with ${tenantData.users.length} users and ${tenantData.organizations.length} organizations!`);
+      
+    } catch (error) {
+      console.error('Error creating tenant:', error);
+      toast.error('Failed to create tenant. Please try again.');
+      throw error;
+    }
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'healthy':
@@ -466,15 +519,22 @@ const EnhancedSystemAdminDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <button
+                onClick={() => setShowWizard(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors flex items-center border border-blue-400 shadow-sm"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                New Tenant Wizard
+              </button>
+              <button
                 onClick={handleRefreshData}
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-md transition-colors flex items-center"
+                className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md transition-colors flex items-center border border-indigo-400 shadow-sm"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </button>
               <div className="flex items-center">
                 <div className="h-3 w-3 bg-green-400 rounded-full animate-pulse mr-2"></div>
-                <span className="text-sm">All Systems Operational</span>
+                <span className="text-sm text-white">All Systems Operational</span>
               </div>
             </div>
           </div>
@@ -711,6 +771,15 @@ const EnhancedSystemAdminDashboard = () => {
                 </div>
               ))}
             </div>
+            <div className="mt-4 pt-4 border-t">
+              <button
+                onClick={() => setShowWizard(true)}
+                className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Tenant
+              </button>
+            </div>
           </div>
         </div>
 
@@ -761,6 +830,13 @@ const EnhancedSystemAdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Tenant Onboarding Wizard */}
+      <TenantOnboardingWizard
+        isOpen={showWizard}
+        onClose={() => setShowWizard(false)}
+        onComplete={handleWizardComplete}
+      />
     </div>
   );
 };
