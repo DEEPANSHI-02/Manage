@@ -27,6 +27,7 @@ import {
   Lock,
   Unlock
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Mock API for System Users
 const mockSystemUsersApi = {
@@ -244,26 +245,26 @@ const SystemUsersPage = () => {
         case 'impersonate':
           response = await mockSystemUsersApi.impersonateUser(userId);
           if (response.success) {
-            alert(`${response.message}. Session token: ${response.data.sessionToken.substring(0, 20)}...`);
+            toast.success(response.message);
           }
           break;
         case 'resetPassword':
           response = await mockSystemUsersApi.resetPassword(userId);
           if (response.success) {
-            alert(`${response.message}. Temporary password: ${response.data.tempPassword}`);
+            toast.success(response.message);
           }
           break;
         case 'suspend':
           response = await mockSystemUsersApi.suspendUser(userId);
           if (response.success) {
-            alert(response.message);
+            toast.success(response.message);
             loadUsers();
           }
           break;
         case 'activate':
           response = await mockSystemUsersApi.activateUser(userId);
           if (response.success) {
-            alert(response.message);
+            toast.success(response.message);
             loadUsers();
           }
           break;
@@ -271,7 +272,7 @@ const SystemUsersPage = () => {
           break;
       }
     } catch (error) {
-      alert('Action failed');
+      toast.error('Action failed');
     } finally {
       setActionLoading(false);
     }
@@ -737,7 +738,7 @@ const SystemUsersPage = () => {
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <button
-              onClick={() => alert('Bulk role assignment feature')}
+              onClick={() => toast.info('Bulk role assignment feature')}
               className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
             >
               <Shield className="h-8 w-8 text-gray-400 mb-2" />
@@ -746,7 +747,7 @@ const SystemUsersPage = () => {
             </button>
 
             <button
-              onClick={() => alert('Mass password reset feature')}
+              onClick={() => toast.info('Mass password reset feature')}
               className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
             >
               <Settings className="h-8 w-8 text-gray-400 mb-2" />
@@ -755,7 +756,7 @@ const SystemUsersPage = () => {
             </button>
 
             <button
-              onClick={() => alert('Tenant migration feature')}
+              onClick={() => toast.info('Tenant migration feature')}
               className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
             >
               <Building className="h-8 w-8 text-gray-400 mb-2" />
@@ -764,7 +765,7 @@ const SystemUsersPage = () => {
             </button>
 
             <button
-              onClick={() => alert('Activity report generation')}
+              onClick={() => toast.info('Activity report generation')}
               className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
             >
               <Activity className="h-8 w-8 text-gray-400 mb-2" />

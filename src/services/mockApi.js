@@ -170,6 +170,20 @@ class MockApiService {
     };
   }
 
+  async deleteTenant(id) {
+    await this.delay();
+    const tenantIndex = mockData.tenants.findIndex(t => t.id === id);
+    if (tenantIndex === -1) {
+      throw new Error('Tenant not found');
+    }
+    mockData.tenants.splice(tenantIndex, 1);
+    return {
+      success: true,
+      message: 'Tenant deleted successfully',
+      trace_id: this.generateId()
+    };
+  }
+
   // ==================== ORGANIZATION MANAGEMENT APIs ====================
   async getOrganizations(tenantId, filters = {}) {
     await this.delay();

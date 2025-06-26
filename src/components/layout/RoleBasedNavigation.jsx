@@ -75,15 +75,15 @@ const RoleBasedNavigation = () => {
     },
     {
       name: 'API Management',
-      href: '/system/api',
+      href: '/system/api-management',
       icon: Zap,
-      current: location.pathname === '/system/api'
+      current: location.pathname === '/system/api-management'
     },
     {
       name: 'Global Reports',
-      href: '/system/reports',
+      href: '/system/global-reports',
       icon: BarChart3,
-      current: location.pathname === '/system/reports'
+      current: location.pathname === '/system/global-reports'
     }
   ];
 

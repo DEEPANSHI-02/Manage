@@ -67,9 +67,9 @@ const TenantManagement = () => {
     try {
       const response = await mockApi.createTenant(tenantData);
       if (response.success) {
-        setTenants([...tenants, response.data]);
         setShowCreateModal(false);
         toast.success('Tenant created successfully');
+        loadTenants();
       }
     } catch (error) {
       toast.error('Failed to create tenant');
@@ -84,12 +84,10 @@ const TenantManagement = () => {
     try {
       const response = await mockApi.updateTenant(selectedTenant.id, tenantData);
       if (response.success) {
-        setTenants(tenants.map(t => 
-          t.id === selectedTenant.id ? response.data : t
-        ));
         setShowEditModal(false);
         setSelectedTenant(null);
         toast.success('Tenant updated successfully');
+        loadTenants();
       }
     } catch (error) {
       toast.error('Failed to update tenant');
@@ -102,11 +100,11 @@ const TenantManagement = () => {
    */
   const handleDeleteTenant = async () => {
     try {
-      // Mock deletion - in real app, this would call an API
-      setTenants(tenants.filter(t => t.id !== selectedTenant.id));
+      await mockApi.deleteTenant(selectedTenant.id);
       setShowDeleteModal(false);
       setSelectedTenant(null);
       toast.success('Tenant deleted successfully');
+      loadTenants();
     } catch (error) {
       toast.error('Failed to delete tenant');
       console.error('Error deleting tenant:', error);

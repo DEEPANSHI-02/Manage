@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const SystemConfiguration = () => {
   const [config, setConfig] = useState({
@@ -67,9 +68,9 @@ const SystemConfiguration = () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      alert(`${section} configuration saved successfully!`);
+      toast.success(`${section} configuration saved successfully!`);
     } catch (error) {
-      alert('Failed to save configuration');
+      toast.error('Failed to save configuration');
     } finally {
       setLoading(false);
     }
@@ -444,3 +445,5 @@ const SystemConfiguration = () => {
     </div>
   );
 };
+
+export default SystemConfiguration;

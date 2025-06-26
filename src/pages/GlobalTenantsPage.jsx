@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Settings
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Mock API service
 const mockApi = {
@@ -162,10 +163,10 @@ const GlobalTenantsPage = () => {
       if (response.success) {
         loadTenants();
         setShowCreateModal(false);
-        alert('Tenant created successfully!');
+        toast.success('Tenant created successfully!');
       }
     } catch (error) {
-      alert('Failed to create tenant');
+      toast.error('Failed to create tenant');
     }
   };
 
@@ -175,9 +176,9 @@ const GlobalTenantsPage = () => {
       loadTenants();
       setShowEditModal(false);
       setSelectedTenant(null);
-      alert('Tenant updated successfully!');
+      toast.success('Tenant updated successfully!');
     } catch (error) {
-      alert('Failed to update tenant');
+      toast.error('Failed to update tenant');
     }
   };
 
@@ -187,9 +188,9 @@ const GlobalTenantsPage = () => {
       setTenants(tenants.filter(t => t.id !== selectedTenant.id));
       setShowDeleteModal(false);
       setSelectedTenant(null);
-      alert('Tenant deleted successfully!');
+      toast.success('Tenant deleted successfully!');
     } catch (error) {
-      alert('Failed to delete tenant');
+      toast.error('Failed to delete tenant');
     }
   };
 
@@ -622,6 +623,9 @@ const GlobalTenantsPage = () => {
 };
 
 // Modal Components
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^\+?[0-9\-\s]{7,20}$/;
+
 const CreateTenantModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -631,9 +635,23 @@ const CreateTenantModal = ({ onClose, onSubmit }) => {
     contactEmail: '',
     contactPhone: ''
   });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const errs = {};
+    if (!formData.name.trim()) errs.name = 'Tenant name is required';
+    if (!formData.industry.trim()) errs.industry = 'Industry is required';
+    if (!formData.contactEmail.trim()) errs.contactEmail = 'Email is required';
+    else if (!emailRegex.test(formData.contactEmail)) errs.contactEmail = 'Invalid email format';
+    if (formData.contactPhone && !phoneRegex.test(formData.contactPhone)) errs.contactPhone = 'Invalid phone format';
+    return errs;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     onSubmit(formData);
   };
 
@@ -652,6 +670,7 @@ const CreateTenantModal = ({ onClose, onSubmit }) => {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
+              {errors.name && <div className="text-red-600 text-xs mt-1">{errors.name}</div>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Industry</label>
@@ -662,6 +681,7 @@ const CreateTenantModal = ({ onClose, onSubmit }) => {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
+              {errors.industry && <div className="text-red-600 text-xs mt-1">{errors.industry}</div>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Plan</label>
@@ -684,6 +704,17 @@ const CreateTenantModal = ({ onClose, onSubmit }) => {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
+              {errors.contactEmail && <div className="text-red-600 text-xs mt-1">{errors.contactEmail}</div>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
+              <input
+                type="text"
+                value={formData.contactPhone}
+                onChange={(e) => setFormData({...formData, contactPhone: e.target.value})}
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+              />
+              {errors.contactPhone && <div className="text-red-600 text-xs mt-1">{errors.contactPhone}</div>}
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -716,9 +747,23 @@ const EditTenantModal = ({ tenant, onClose, onSubmit }) => {
     contactEmail: tenant.contactEmail,
     contactPhone: tenant.contactPhone
   });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const errs = {};
+    if (!formData.name.trim()) errs.name = 'Tenant name is required';
+    if (!formData.industry.trim()) errs.industry = 'Industry is required';
+    if (!formData.contactEmail.trim()) errs.contactEmail = 'Email is required';
+    else if (!emailRegex.test(formData.contactEmail)) errs.contactEmail = 'Invalid email format';
+    if (formData.contactPhone && !phoneRegex.test(formData.contactPhone)) errs.contactPhone = 'Invalid phone format';
+    return errs;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     onSubmit(formData);
   };
 
@@ -737,6 +782,7 @@ const EditTenantModal = ({ tenant, onClose, onSubmit }) => {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
+              {errors.name && <div className="text-red-600 text-xs mt-1">{errors.name}</div>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Industry</label>
@@ -747,6 +793,7 @@ const EditTenantModal = ({ tenant, onClose, onSubmit }) => {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
+              {errors.industry && <div className="text-red-600 text-xs mt-1">{errors.industry}</div>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Plan</label>
@@ -769,6 +816,17 @@ const EditTenantModal = ({ tenant, onClose, onSubmit }) => {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
+              {errors.contactEmail && <div className="text-red-600 text-xs mt-1">{errors.contactEmail}</div>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
+              <input
+                type="text"
+                value={formData.contactPhone}
+                onChange={(e) => setFormData({...formData, contactPhone: e.target.value})}
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+              />
+              {errors.contactPhone && <div className="text-red-600 text-xs mt-1">{errors.contactPhone}</div>}
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button

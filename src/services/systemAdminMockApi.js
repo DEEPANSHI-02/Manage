@@ -791,6 +791,70 @@ class SystemAdminMockApiService {
       message: 'Report generated successfully'
     };
   }
+
+  // ==================== API MANAGEMENT CRUD ====================
+  async getApis() {
+    await this.delay();
+    return {
+      success: true,
+      data: this.systemData.apis || [],
+      message: 'APIs retrieved successfully'
+    };
+  }
+
+  async createApi(apiData) {
+    await this.delay();
+    if (!this.systemData.apis) this.systemData.apis = [];
+    const newApi = { ...apiData, id: 'api_' + Date.now() };
+    this.systemData.apis.push(newApi);
+    return {
+      success: true,
+      data: newApi,
+      message: 'API created successfully'
+    };
+  }
+
+  async updateApi(apiId, updates) {
+    await this.delay();
+    if (!this.systemData.apis) this.systemData.apis = [];
+    const idx = this.systemData.apis.findIndex(a => a.id === apiId);
+    if (idx === -1) throw new Error('API not found');
+    this.systemData.apis[idx] = { ...this.systemData.apis[idx], ...updates };
+    return {
+      success: true,
+      data: this.systemData.apis[idx],
+      message: 'API updated successfully'
+    };
+  }
+
+  async deleteApi(apiId) {
+    await this.delay();
+    if (!this.systemData.apis) this.systemData.apis = [];
+    const idx = this.systemData.apis.findIndex(a => a.id === apiId);
+    if (idx === -1) throw new Error('API not found');
+    const deleted = this.systemData.apis.splice(idx, 1)[0];
+    return {
+      success: true,
+      data: deleted,
+      message: 'API deleted successfully'
+    };
+  }
+
+  // ==================== GLOBAL REPORTS LIST ====================
+  async listReports(filter = '') {
+    await this.delay();
+    if (!this.systemData.globalReports) this.systemData.globalReports = [
+      { id: 'report-1', name: 'Tenant Growth', type: 'tenant_growth', createdAt: new Date(), description: 'Monthly tenant growth', data: { tenants: 3, users: 350 } },
+      { id: 'report-2', name: 'System Usage', type: 'system_usage', createdAt: new Date(), description: 'System usage stats', data: { requests: 450000, errors: 180 } }
+    ];
+    let reports = this.systemData.globalReports;
+    if (filter) reports = reports.filter(r => r.name.toLowerCase().includes(filter.toLowerCase()));
+    return {
+      success: true,
+      data: reports,
+      message: 'Reports retrieved successfully'
+    };
+  }
 }
 
 // Create and export the service instance

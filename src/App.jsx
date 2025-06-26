@@ -6,21 +6,23 @@ import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import TenantManagement from './pages/TenantManagement';
 import OrganizationManagement from './pages/OrganizationManagement';
+import SystemUsersPage from './pages/SystemUsersPage';
+import RoleManagement from './pages/roles/RoleManagement';
 
 // Import all three dashboards
 import SystemAdminDashboard from './pages/dashboards/SystemAdminDashboards';
 import TenantAdminDashboard from './pages/dashboards/TenantAdminDashboard';
 import UserPortal from './pages/UserPortal';
 
-import { 
-  UserManagement,
-  RoleManagement,
-  PrivilegeManagement,
-  LegalEntityManagement,
-  SettingsPage
-} from './pages/PlaceholderPages';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import './App.css';
+import PrivilegeManagement from './pages/system/PrivilegeManagement';
+import LegalEntityManagement from './pages/system/LegalEntityManagement';
+import SystemMonitoring from './pages/system/SystemMonitoring';
+import SystemConfiguration from './pages/system/SystemConfiguration';
+import SecurityCenter from './pages/system/SecurityCenter';
+import APIManagement from './pages/system/APIManagement';
+import GlobalReports from './pages/system/GlobalReports';
 
 /**
  * Role-Based Dashboard Component
@@ -286,7 +288,7 @@ function App() {
                       path="/users" 
                       element={
                         <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
-                          <UserManagement />
+                          <SystemUsersPage />
                         </RoleProtectedRoute>
                       } 
                     />
@@ -301,9 +303,9 @@ function App() {
                     />
                     
                     <Route 
-                      path="/privileges" 
+                      path="/system/privileges" 
                       element={
-                        <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
+                        <RoleProtectedRoute allowedRoles={['system_admin']}>
                           <PrivilegeManagement />
                         </RoleProtectedRoute>
                       } 
@@ -313,7 +315,7 @@ function App() {
                       path="/admin/settings" 
                       element={
                         <RoleProtectedRoute allowedRoles={['system_admin', 'tenant_admin']}>
-                          <SettingsPage />
+                          {/* Placeholder for settings page */}
                         </RoleProtectedRoute>
                       } 
                     />
@@ -335,6 +337,15 @@ function App() {
                         </RoleProtectedRoute>
                       } 
                     />
+
+                    {/* System Admin routes */}
+                    <Route path="/system/users" element={<RoleProtectedRoute allowedRoles={['system_admin']}><SystemUsersPage /></RoleProtectedRoute>} />
+                    <Route path="/system/organizations" element={<RoleProtectedRoute allowedRoles={['system_admin']}><OrganizationManagement /></RoleProtectedRoute>} />
+                    <Route path="/system/monitoring" element={<RoleProtectedRoute allowedRoles={['system_admin']}><SystemMonitoring /></RoleProtectedRoute>} />
+                    <Route path="/system/config" element={<RoleProtectedRoute allowedRoles={['system_admin']}><SystemConfiguration /></RoleProtectedRoute>} />
+                    <Route path="/system/security" element={<RoleProtectedRoute allowedRoles={['system_admin']}><SecurityCenter /></RoleProtectedRoute>} />
+                    <Route path="/system/api-management" element={<RoleProtectedRoute allowedRoles={['system_admin']}><APIManagement /></RoleProtectedRoute>} />
+                    <Route path="/system/global-reports" element={<RoleProtectedRoute allowedRoles={['system_admin']}><GlobalReports /></RoleProtectedRoute>} />
 
                     {/* Catch-all route */}
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
